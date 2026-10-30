@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id                   String   @id @default(cuid())
+  name                 String
+  type                 String   // WEDDING | BIRTHDAY | COMMUNITY
+  date                 String   // YYYY-MM-DD
+  city                 String
+  guestCount           Int
+  totalBudget          Int      // INR integer
+  theme                String   @default("")
+  colors               String   @default("")
+  foodPreferences      String   @default("")
+  venuePreferences     String   @default("")
+  culturalPreferences  String   @default("")
+  specialRequirements  String   @default("")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  budgetCategories BudgetCategory[]
+  tasks            Task[]
+  vendors          Vendor[]
+  checklistItems   ChecklistItem[]
+  aiPlans          AiPlan[]
+  savedIdeas       SavedIdea[]
+}
+
+model BudgetCategory {
+  id        String  @id @default(cuid())
+  eventId   String
+  name      String
+  allocated Int     // INR integer
+  estimated Int     // INR integer
+  locked    Boolean @default(false)
+
+  event    Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([eventId, name])
+  @@index([eventId])
+}
+
+model Expense {
+  id          String @id @default(cuid())
+  categoryId  String
+  description String
+  amount      Int    // INR integer
+  paidOn      String // YYYY-MM-DD
+
+  category BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+}
+
+model Task {
+  id          String  @id @default(cuid())
+  eventId     String
+  title       String
+  description String  @default("")
+  dueDate     String  // YYYY-MM-DD
+  startTime   String? // HH:MM for event-day schedule
+  offsetDays  Int?    // original AI planning offset
+  priority    String  @default("MEDIUM") // LOW | MEDIUM | HIGH
+  status      String  @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED
+  category    String  @default("")
+  source      String  @default("USER") // AI | USER | SAMPLE
+  locked      Boolean @default(false)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model Vendor {
+  id          String  @id @default(cuid())
+  eventId     String
+  category    String  // Venue | Caterer | Decorator | etc.
+  name        String
+  contactName String  @default("")
+  phone       String  @default("")
+  email       String  @default("")
+  quote       Int?    // INR integer
+  status      String  @default("NOT_CONTACTED")
+  notes       String  @default("")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model ChecklistItem {
+  id             String  @id @default(cuid())
+  eventId        String
+  vendorCategory String
+  text           String
+  done           Boolean @default(false)
+  source         String  @default("AI") // AI | USER | SAMPLE
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model AiPlan {
+  id          String   @id @default(cuid())
+  eventId     String
+  provider    String   // gemini | demo
+  model       String
+  content     String   // serialized JSON
+  generatedAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model SavedIdea {
+  id       String  @id @default(cuid())
+  eventId  String
+  category String
+  text     String
+  favorite Boolean @default(false)
+  source   String  @default("AI") // AI | USER | SAMPLE
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
