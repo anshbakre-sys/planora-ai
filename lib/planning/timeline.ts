@@ -39,7 +39,7 @@ export const computeDueDates = (
     }));
   }
   
-  if (daysUntilEvent <= 14) {
+  if (daysUntilEvent <= 14 || sorted.some(t => t.offsetDays > daysUntilEvent)) {
     // Short notice: compress tasks proportionally into available window
     const maxOffset = Math.max(...sorted.map(t => t.offsetDays), 1);
     return sorted.map(t => {
