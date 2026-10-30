@@ -9,7 +9,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "setup": "prisma generate && prisma migrate deploy"
+    "setup": "prisma generate && prisma migrate deploy",
+    "build:render": "prisma generate --schema prisma/schema.postgres.prisma && next build",
+    "db:render": "prisma db push --schema prisma/schema.postgres.prisma"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
