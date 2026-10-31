@@ -149,6 +149,37 @@ function extractEvent(payload: unknown): EventData {
   return data as EventData;
 }
 
+function extractGeneratedPlan(
+  payload: unknown
+): NonNullable<EventData['aiPlans']>[number] {
+  if (typeof payload !== 'object' || payload === null) {
+    throw new Error('Invalid generated plan response');
+  }
+
+  const data = (payload as Record<string, unknown>).data;
+
+  if (typeof data !== 'object' || data === null) {
+    throw new Error('Generated plan data is missing');
+  }
+
+  const { provider, model, plan } = data as Record<string, unknown>;
+
+  if (
+    typeof provider !== 'string' ||
+    typeof model !== 'string' ||
+    typeof plan !== 'object' ||
+    plan === null
+  ) {
+    throw new Error('Generated plan response is incomplete');
+  }
+
+  return {
+    provider,
+    model,
+    content: JSON.stringify(plan),
+  };
+}
+
 function getEditableDetails(event: EventData): EditableDetails {
   return {
     name: event.name ?? '',
@@ -333,7 +364,13 @@ function EventWorkspaceContent({ params }: PageProps) {
       );
     }
 
+    const result = await readResponse(response);
+    const generatedPlan = extractGeneratedPlan(result);
     await refreshEvent();
+    setEventData((current) =>
+      current ? { ...current, aiPlans: [generatedPlan] } : current
+    );
+    setActiveTab('plan');
   };
 
   const updateDetail = (

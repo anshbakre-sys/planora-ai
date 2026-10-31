@@ -6,6 +6,7 @@ import { computeDueDates } from '@/lib/planning/timeline';
 import { today } from '@/lib/date';
 import type { EventType } from '@/lib/constants';
 import { aiPlanContentSchema } from '@/lib/schemas';
+import { alignPlanBudget } from '@/lib/ai/budget';
 
 export async function POST(req: NextRequest) {
   if (!checkOrigin(req)) return originError();
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     : (await import('@/lib/ai')).getProvider();
 
   try {
-    const plan = await provider.generatePlan({
+    const generatedPlan = await provider.generatePlan({
       name: event.name,
       type: event.type as EventType,
       date: event.date,
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
       culturalPreferences: event.culturalPreferences,
       specialRequirements: event.specialRequirements,
     });
+    const plan = alignPlanBudget(generatedPlan, event.totalBudget);
 
     // Compute due dates for tasks
     const dueDates = computeDueDates(
@@ -108,4 +110,3 @@ export async function POST(req: NextRequest) {
     return jsonError('AI_ERROR', message, 500);
   }
 }
-
